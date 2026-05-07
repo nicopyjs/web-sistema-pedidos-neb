@@ -127,7 +127,7 @@ export async function updatePedido(
   if (!canEdit) return { error: 'Sin permisos para editar este pedido' }
 
   const parsed = updatePedidoSchema.safeParse(input)
-  if (!parsed.success) return { error: parsed.data?.toString() ?? 'Datos inválidos' }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
   const { items, ...fields } = parsed.data
 

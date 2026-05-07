@@ -280,7 +280,7 @@ export default function MaterialSelector({
           {filtered.length === 0 ? (
             <div className="py-12 text-center text-gray-400">
               <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Sin resultados para "{search}"</p>
+              <p className="text-sm">Sin resultados para &quot;{search}&quot;</p>
             </div>
           ) : (
             <div className="space-y-1">

@@ -23,7 +23,7 @@ export default function DraftItemsTable({ items, onUpdate, onRemove }: DraftItem
       <div className="flex flex-col items-center justify-center py-12 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
         <Package className="w-10 h-10 mb-3 opacity-30" />
         <p className="text-sm font-medium text-gray-500">Sin materiales agregados</p>
-        <p className="text-xs mt-1">Usa el botón "Agregar material" para buscar en el catálogo.</p>
+        <p className="text-xs mt-1">Usa el botón &quot;Agregar material&quot; para buscar en el catálogo.</p>
       </div>
     )
   }

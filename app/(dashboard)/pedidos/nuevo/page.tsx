@@ -19,7 +19,7 @@ export default async function NuevoPedidoPage() {
     .eq('id', user.id)
     .single<Profile>()
 
-  if (!profile || profile.rol !== 'supervisor') redirect('/pedidos')
+  if (!profile || !['supervisor', 'administrador'].includes(profile.rol)) redirect('/pedidos')
 
   const [{ data: obrasData }, { data: materialesData }] = await Promise.all([
     supabase

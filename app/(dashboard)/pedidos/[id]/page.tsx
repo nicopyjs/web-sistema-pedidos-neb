@@ -13,6 +13,7 @@ import {
   cn,
 } from '@/lib/utils'
 import type { Profile, Pedido, PedidoItem, PedidoHistorial } from '@/types'
+import PedidoActions from '@/components/pedidos/pedido-actions'
 
 export default async function PedidoDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
@@ -176,6 +177,9 @@ export default async function PedidoDetailPage({ params }: { params: { id: strin
             </table>
           </div>
         </div>
+
+        {/* Acciones de gestión */}
+        <PedidoActions pedidoId={pedido.id} estado={pedido.estado} userRol={profile.rol} />
 
         {/* Historial */}
         {historial.length > 0 && (

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import type { EstadoPedido } from '@/types'
 
 const itemSchema = z.object({
   material_id:     z.string().uuid(),
@@ -36,8 +37,8 @@ export async function createPedido(input: CreatePedidoInput): Promise<CreatePedi
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.rol !== 'supervisor') {
-    return { error: 'Solo los supervisores pueden crear pedidos' }
+  if (!profile || !['supervisor', 'administrador'].includes(profile.rol)) {
+    return { error: 'Solo los supervisores y administradores pueden crear pedidos' }
   }
 
   const parsed = createPedidoSchema.safeParse(input)
@@ -84,4 +85,32 @@ export async function createPedido(input: CreatePedidoInput): Promise<CreatePedi
   revalidatePath('/dashboard')
 
   return { id: pedido.id, numero: pedido.numero }
+}
+
+export async function updateEstadoPedido(
+  pedidoId: string,
+  estado: EstadoPedido,
+  observaciones?: string
+): Promise<{ error?: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase
+    .from('profiles').select('rol').eq('id', user.id).single()
+
+  if (!profile || !['adquisiciones', 'administrador'].includes(profile.rol)) {
+    return { error: 'Sin permisos para cambiar el estado' }
+  }
+
+  const update: Record<string, string> = { estado }
+  if (observaciones?.trim()) update.observaciones_adquisiciones = observaciones.trim()
+
+  const { error } = await supabase.from('pedidos').update(update).eq('id', pedidoId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/pedidos')
+  revalidatePath(`/pedidos/${pedidoId}`)
+  revalidatePath('/dashboard')
+  return {}
 }

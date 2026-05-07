@@ -65,7 +65,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Sear
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <PedidosFilters obras={obras} currentFilters={searchParams} userRol={profile.rol} />
-          {profile.rol === 'supervisor' && (
+          {['supervisor', 'administrador'].includes(profile.rol) && (
             <Link href="/pedidos/nuevo" className="btn-primary flex-shrink-0">
               <Plus className="w-4 h-4" />
               Nuevo pedido

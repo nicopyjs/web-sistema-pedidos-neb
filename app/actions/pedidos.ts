@@ -87,6 +87,81 @@ export async function createPedido(input: CreatePedidoInput): Promise<CreatePedi
   return { id: pedido.id, numero: pedido.numero }
 }
 
+const updatePedidoSchema = z.object({
+  maestro:         z.string().min(2, 'El nombre del maestro es obligatorio'),
+  fecha_requerida: z.string().nullable().optional(),
+  observaciones:   z.string().optional(),
+  estado:          z.enum(['borrador', 'pendiente']),
+  items:           z.array(itemSchema).min(1, 'Agrega al menos un material'),
+})
+
+export type UpdatePedidoInput = z.infer<typeof updatePedidoSchema>
+export type UpdatePedidoResult =
+  | { error?: never }
+  | { error: string }
+
+export async function updatePedido(
+  pedidoId: string,
+  input: UpdatePedidoInput
+): Promise<UpdatePedidoResult> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase
+    .from('profiles').select('rol').eq('id', user.id).single()
+
+  if (!profile) return { error: 'Perfil no encontrado' }
+
+  const { data: pedido } = await supabase
+    .from('pedidos').select('supervisor_id, estado').eq('id', pedidoId).single()
+
+  if (!pedido) return { error: 'Pedido no encontrado' }
+
+  const canEdit =
+    (['supervisor', 'administrador'].includes(profile.rol) &&
+      pedido.supervisor_id === user.id &&
+      ['borrador', 'pendiente'].includes(pedido.estado)) ||
+    profile.rol === 'administrador'
+
+  if (!canEdit) return { error: 'Sin permisos para editar este pedido' }
+
+  const parsed = updatePedidoSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.data?.toString() ?? 'Datos inválidos' }
+
+  const { items, ...fields } = parsed.data
+
+  const { error: pedidoErr } = await supabase
+    .from('pedidos')
+    .update({
+      ...fields,
+      fecha_requerida: fields.fecha_requerida ?? null,
+      observaciones:   fields.observaciones ?? null,
+    })
+    .eq('id', pedidoId)
+
+  if (pedidoErr) return { error: pedidoErr.message }
+
+  await supabase.from('pedido_items').delete().eq('pedido_id', pedidoId)
+
+  const { error: itemsErr } = await supabase.from('pedido_items').insert(
+    items.map(item => ({
+      pedido_id:       pedidoId,
+      material_id:     item.material_id,
+      cantidad:        item.cantidad,
+      precio_unitario: item.precio_unitario,
+      observacion:     item.observacion ?? null,
+    }))
+  )
+
+  if (itemsErr) return { error: itemsErr.message }
+
+  revalidatePath('/pedidos')
+  revalidatePath(`/pedidos/${pedidoId}`)
+  revalidatePath('/dashboard')
+  return {}
+}
+
 export async function updateEstadoPedido(
   pedidoId: string,
   estado: EstadoPedido,

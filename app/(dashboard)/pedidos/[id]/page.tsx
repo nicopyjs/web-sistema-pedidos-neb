@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, CalendarDays, User, Building2, Clock, FileText } from 'lucide-react'
+import { ChevronLeft, CalendarDays, User, Building2, Clock, FileText, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/header'
 import {
@@ -64,10 +64,19 @@ export default async function PedidoDetailPage({ params }: { params: { id: strin
       />
 
       <div className="p-6 space-y-5 max-w-5xl">
-        <Link href="/pedidos" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
-          <ChevronLeft className="w-4 h-4" />
-          Volver a pedidos
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/pedidos" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
+            <ChevronLeft className="w-4 h-4" />
+            Volver a pedidos
+          </Link>
+          {(profile.rol === 'administrador' ||
+            (pedido.supervisor_id === user.id && ['borrador', 'pendiente'].includes(pedido.estado))) && (
+            <Link href={`/pedidos/${pedido.id}/editar`} className="btn-secondary text-sm">
+              <Pencil className="w-4 h-4" />
+              Editar pedido
+            </Link>
+          )}
+        </div>
 
         {/* Estado + metadata */}
         <div className="card p-5 flex flex-wrap items-start justify-between gap-4">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ElementType } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, XCircle, Wrench, TrendingUp, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -11,7 +11,7 @@ import type { EstadoPedido, Rol } from '@/types'
 interface Action {
   estado:  EstadoPedido
   label:   string
-  icon:    React.ElementType
+  icon:    ElementType
   color:   string
   from:    EstadoPedido[]
 }

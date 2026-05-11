@@ -5,5 +5,9 @@
       "PowerShell(Set-Location \"C:\\\\Users\\\\ercio\\\\Documents\\\\sistema-pedidos\"; Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"node_modules|\\\\.next\" } | Select-Object @{N=\"Path\";E={$_.FullName.Replace\\(\"C:\\\\Users\\\\ercio\\\\Documents\\\\sistema-pedidos\\\\\",\"\"\\)}} | Sort-Object Path | Format-Table -AutoSize)",
       "PowerShell(Set-Location \"C:\\\\Users\\\\ercio\\\\Documents\\\\sistema-pedidos\"; Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"node_modules|\\\\.next|tsbuildinfo|package-lock\" } | Select-Object @{N=\"Archivo\";E={$_.FullName.Replace\\(\"C:\\\\Users\\\\ercio\\\\Documents\\\\sistema-pedidos\\\\\",\"\"\\)}} | Sort-Object Archivo | Format-Table -AutoSize)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": true
 }

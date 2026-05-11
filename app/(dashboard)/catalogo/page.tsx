@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation'
-import { Package, Search } from 'lucide-react'
+import { Package } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/header'
-import { CATEGORIA_LABELS, formatCurrency } from '@/lib/utils'
-import type { Profile, Material, CategoriaHVAC } from '@/types'
+import SyncButton from '@/components/catalogo/sync-button'
+import { formatCurrency } from '@/lib/utils'
+import type { Profile, Material } from '@/types'
 
 interface SearchParams { categoria?: string }
 
@@ -15,18 +16,24 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Sea
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single<Profile>()
   if (!profile) redirect('/login')
 
-  let query = supabase.from('materiales').select('*').eq('activo', true).order('categoria').order('nombre')
-  if (searchParams.categoria) query = query.eq('categoria', searchParams.categoria as CategoriaHVAC)
+  const { data: todosData } = await supabase.from('materiales').select('*').eq('activo', true).order('categoria').order('nombre').returns<Material[]>()
+  const todos = todosData ?? []
 
-  const { data: materialesData } = await query.returns<Material[]>()
-  const materiales = materialesData ?? []
+  const materiales = searchParams.categoria
+    ? todos.filter(m => m.categoria === searchParams.categoria)
+    : todos
 
-  const categorias = Object.entries(CATEGORIA_LABELS) as [CategoriaHVAC, string][]
+  const categorias = [...new Set(todos.map(m => m.categoria))].sort()
 
   return (
     <div>
       <Header title="Catálogo de materiales" subtitle={`${materiales.length} materiales disponibles`} />
       <div className="p-6 space-y-4">
+        {profile.rol === 'administrador' && (
+          <div className="flex justify-end">
+            <SyncButton />
+          </div>
+        )}
         {/* Filtro categorías */}
         <div className="flex flex-wrap gap-2">
           <a
@@ -37,15 +44,15 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Sea
           >
             Todos
           </a>
-          {categorias.map(([key, label]) => (
+          {categorias.map((cat) => (
             <a
-              key={key}
-              href={`/catalogo?categoria=${key}`}
+              key={cat}
+              href={`/catalogo?categoria=${encodeURIComponent(cat)}`}
               className={`badge px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors ${
-                searchParams.categoria === key ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                searchParams.categoria === cat ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {label}
+              {cat}
             </a>
           ))}
         </div>
@@ -73,7 +80,7 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Sea
                   </td>
                   <td className="table-cell hidden md:table-cell">
                     <span className="badge bg-blue-50 text-blue-700 text-xs">
-                      {CATEGORIA_LABELS[mat.categoria]}
+                      {mat.categoria}
                     </span>
                   </td>
                   <td className="table-cell hidden sm:table-cell text-gray-500 text-sm">{mat.unidad}</td>

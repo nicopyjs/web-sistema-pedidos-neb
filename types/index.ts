@@ -8,16 +8,7 @@ export type EstadoPedido =
   | 'en_proceso'
   | 'completado'
 
-export type CategoriaHVAC =
-  | 'ductos'
-  | 'fancoils'
-  | 'chillers'
-  | 'vrf'
-  | 'ventilacion'
-  | 'accesorios'
-  | 'aislacion'
-  | 'control'
-  | 'otros'
+export type CategoriaHVAC = string
 
 export interface Profile {
   id: string

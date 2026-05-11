@@ -1,7 +1,7 @@
 'use client'
 
 import { Trash2, Package } from 'lucide-react'
-import { CATEGORIA_LABELS, formatCurrency, cn } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 import type { Material } from '@/types'
 
 export interface DraftItem {
@@ -66,7 +66,7 @@ export default function DraftItemsTable({ items, onUpdate, onRemove }: DraftItem
                 {/* Categoría */}
                 <td className="table-cell hidden sm:table-cell">
                   <span className="badge bg-blue-50 text-blue-700 text-xs">
-                    {CATEGORIA_LABELS[item.material.categoria]}
+                    {item.material.categoria}
                   </span>
                 </td>
 

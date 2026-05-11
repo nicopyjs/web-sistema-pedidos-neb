@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
-import type { EstadoPedido, CategoriaHVAC, Rol } from '@/types'
+import type { EstadoPedido, Rol } from '@/types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -47,17 +47,6 @@ export const ESTADO_COLORS: Record<EstadoPedido, string> = {
   completado: 'bg-purple-100 text-purple-700',
 }
 
-export const CATEGORIA_LABELS: Record<CategoriaHVAC, string> = {
-  ductos:      'Ductos Galvanizados',
-  fancoils:    'Fan Coils',
-  chillers:    'Chillers',
-  vrf:         'Sistemas VRF',
-  ventilacion: 'Ventilación',
-  accesorios:  'Accesorios',
-  aislacion:   'Aislación',
-  control:     'Control y Automatización',
-  otros:       'Otros',
-}
 
 export const ROL_LABELS: Record<Rol, string> = {
   supervisor:    'Supervisor',

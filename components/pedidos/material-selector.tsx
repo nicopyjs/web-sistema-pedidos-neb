@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, X, Plus, Check, ChevronRight, Loader2 } from 'lucide-react'
-import { CATEGORIA_LABELS, formatCurrency, cn } from '@/lib/utils'
-import type { Material, CategoriaHVAC } from '@/types'
-
-const CATEGORIAS = Object.entries(CATEGORIA_LABELS) as [CategoriaHVAC, string][]
+import { formatCurrency, cn } from '@/lib/utils'
+import type { Material } from '@/types'
 
 interface MaterialSelectorProps {
   open:        boolean
@@ -29,8 +27,10 @@ export default function MaterialSelector({
   selectedIds,
   onAdd,
 }: MaterialSelectorProps) {
+  const categorias = useMemo(() => [...new Set(materiales.map(m => m.categoria))].sort(), [materiales])
+
   const [search,    setSearch]    = useState('')
-  const [categoria, setCategoria] = useState<CategoriaHVAC | 'todos'>('todos')
+  const [categoria, setCategoria] = useState<string>('todos')
   const [adding,    setAdding]    = useState<AddState | null>(null)
   const searchRef  = useRef<HTMLInputElement>(null)
   const cantidadRef = useRef<HTMLInputElement>(null)
@@ -173,22 +173,22 @@ export default function MaterialSelector({
           >
             Todos ({materiales.length})
           </button>
-          {CATEGORIAS.map(([key, label]) => {
-            const count = materiales.filter((m) => m.categoria === key).length
+          {categorias.map((cat) => {
+            const count = materiales.filter((m) => m.categoria === cat).length
             if (count === 0) return null
             return (
               <button
-                key={key}
+                key={cat}
                 type="button"
-                onClick={() => setCategoria(key)}
+                onClick={() => setCategoria(cat)}
                 className={cn(
                   'flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors',
-                  categoria === key
+                  categoria === cat
                     ? 'bg-primary-600 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 )}
               >
-                {label} ({count})
+                {cat} ({count})
               </button>
             )
           })}
@@ -286,13 +286,13 @@ export default function MaterialSelector({
             <div className="space-y-1">
               {/* Group by category when showing all */}
               {categoria === 'todos' && !search
-                ? CATEGORIAS.map(([catKey, catLabel]) => {
+                ? categorias.map((catKey) => {
                     const group = filtered.filter((m) => m.categoria === catKey)
                     if (group.length === 0) return null
                     return (
                       <div key={catKey}>
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pt-3 pb-1 px-1">
-                          {catLabel}
+                          {catKey}
                         </p>
                         {group.map((material) => (
                           <MaterialRow

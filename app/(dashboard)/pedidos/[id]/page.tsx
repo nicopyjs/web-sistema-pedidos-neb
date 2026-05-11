@@ -9,7 +9,6 @@ import {
   formatCurrency,
   ESTADO_LABELS,
   ESTADO_COLORS,
-  CATEGORIA_LABELS,
   cn,
 } from '@/lib/utils'
 import type { Profile, Pedido, PedidoItem, PedidoHistorial } from '@/types'
@@ -151,7 +150,7 @@ export default async function PedidoDetailPage({ params }: { params: { id: strin
                     <td className="table-cell hidden sm:table-cell">
                       {item.material && (
                         <span className="badge bg-blue-50 text-blue-700 text-xs">
-                          {CATEGORIA_LABELS[item.material.categoria]}
+                          {item.material.categoria}
                         </span>
                       )}
                     </td>

@@ -81,7 +81,7 @@ export async function POST() {
         activo: true,
       }
     })
-    .filter(Boolean)
+    .filter((m): m is NonNullable<typeof m> => m !== null)
 
   // 4. Upsert en lotes (no borra → no rompe FK de pedido_items)
   const admin = createAdminClient()

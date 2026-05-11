@@ -27,7 +27,7 @@ export default function MaterialSelector({
   selectedIds,
   onAdd,
 }: MaterialSelectorProps) {
-  const categorias = useMemo(() => [...new Set(materiales.map(m => m.categoria))].sort(), [materiales])
+  const categorias = useMemo(() => Array.from(new Set(materiales.map(m => m.categoria))).sort(), [materiales])
 
   const [search,    setSearch]    = useState('')
   const [categoria, setCategoria] = useState<string>('todos')

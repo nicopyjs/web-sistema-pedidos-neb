@@ -23,7 +23,7 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Sea
     ? todos.filter(m => m.categoria === searchParams.categoria)
     : todos
 
-  const categorias = [...new Set(todos.map(m => m.categoria))].sort()
+  const categorias = Array.from(new Set(todos.map(m => m.categoria))).sort()
 
   return (
     <div>

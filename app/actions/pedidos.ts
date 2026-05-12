@@ -6,7 +6,9 @@ import { createClient } from '@/lib/supabase/server'
 import type { EstadoPedido } from '@/types'
 
 const itemSchema = z.object({
-  material_id:     z.string().uuid(),
+  material_id:     z.string().uuid().nullable(),
+  nombre_custom:   z.string().optional(),
+  unidad_custom:   z.string().optional(),
   cantidad:        z.number().positive(),
   precio_unitario: z.number().nullable(),
   observacion:     z.string().optional(),
@@ -69,7 +71,9 @@ export async function createPedido(input: CreatePedidoInput): Promise<CreatePedi
     .insert(
       items.map((item) => ({
         pedido_id:       pedido.id,
-        material_id:     item.material_id,
+        material_id:     item.material_id ?? null,
+        nombre_custom:   item.nombre_custom ?? null,
+        unidad_custom:   item.unidad_custom ?? null,
         cantidad:        item.cantidad,
         precio_unitario: item.precio_unitario,
         observacion:     item.observacion ?? null,
@@ -147,7 +151,9 @@ export async function updatePedido(
   const { error: itemsErr } = await supabase.from('pedido_items').insert(
     items.map(item => ({
       pedido_id:       pedidoId,
-      material_id:     item.material_id,
+      material_id:     item.material_id ?? null,
+      nombre_custom:   item.nombre_custom ?? null,
+      unidad_custom:   item.unidad_custom ?? null,
       cantidad:        item.cantidad,
       precio_unitario: item.precio_unitario,
       observacion:     item.observacion ?? null,
@@ -159,6 +165,31 @@ export async function updatePedido(
   revalidatePath('/pedidos')
   revalidatePath(`/pedidos/${pedidoId}`)
   revalidatePath('/dashboard')
+  return {}
+}
+
+export async function updatePrecioItem(
+  itemId: string,
+  pedidoId: string,
+  precio: number | null
+): Promise<{ error?: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase.from('profiles').select('rol').eq('id', user.id).single()
+  if (!profile || !['adquisiciones', 'administrador'].includes(profile.rol)) {
+    return { error: 'Sin permisos para editar precios' }
+  }
+
+  const { error } = await supabase
+    .from('pedido_items')
+    .update({ precio_unitario: precio })
+    .eq('id', itemId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/pedidos/${pedidoId}`)
   return {}
 }
 

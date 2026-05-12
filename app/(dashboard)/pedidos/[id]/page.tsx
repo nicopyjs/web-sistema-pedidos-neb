@@ -6,13 +6,13 @@ import Header from '@/components/layout/header'
 import {
   formatDate,
   formatDateTime,
-  formatCurrency,
   ESTADO_LABELS,
   ESTADO_COLORS,
   cn,
 } from '@/lib/utils'
 import type { Profile, Pedido, PedidoItem, PedidoHistorial } from '@/types'
 import PedidoActions from '@/components/pedidos/pedido-actions'
+import ItemsPrecioTable from '@/components/pedidos/items-precio-table'
 
 export default async function PedidoDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
@@ -49,11 +49,6 @@ export default async function PedidoDetailPage({ params }: { params: { id: strin
 
   const items     = (itemsData     ?? []) as PedidoItem[]
   const historial = (historialData ?? []) as PedidoHistorial[]
-
-  const totalEstimado = items.reduce(
-    (sum, i) => (i.precio_unitario ? sum + i.cantidad * i.precio_unitario : sum),
-    0
-  )
 
   return (
     <div>
@@ -126,64 +121,7 @@ export default async function PedidoDetailPage({ params }: { params: { id: strin
             <h2 className="font-semibold text-gray-900">Materiales solicitados</h2>
             <span className="text-sm text-gray-400">{items.length} ítem{items.length !== 1 ? 's' : ''}</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="table-header">#</th>
-                  <th className="table-header">Material</th>
-                  <th className="table-header hidden sm:table-cell">Categoría</th>
-                  <th className="table-header">Cantidad</th>
-                  <th className="table-header hidden md:table-cell">Precio ref.</th>
-                  <th className="table-header hidden md:table-cell">Subtotal</th>
-                  <th className="table-header hidden lg:table-cell">Observación</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {items.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="table-cell text-gray-400 text-xs font-mono">{idx + 1}</td>
-                    <td className="table-cell">
-                      <p className="font-medium text-gray-900 text-sm">{item.material?.nombre}</p>
-                      <p className="text-xs font-mono text-gray-400">{item.material?.codigo}</p>
-                    </td>
-                    <td className="table-cell hidden sm:table-cell">
-                      {item.material && (
-                        <span className="badge bg-blue-50 text-blue-700 text-xs">
-                          {item.material.categoria}
-                        </span>
-                      )}
-                    </td>
-                    <td className="table-cell font-medium">
-                      {item.cantidad} {item.material?.unidad}
-                    </td>
-                    <td className="table-cell hidden md:table-cell text-gray-500 text-sm">
-                      {formatCurrency(item.precio_unitario)}
-                    </td>
-                    <td className="table-cell hidden md:table-cell text-gray-700 text-sm font-medium">
-                      {item.precio_unitario ? formatCurrency(item.cantidad * item.precio_unitario) : '—'}
-                    </td>
-                    <td className="table-cell hidden lg:table-cell text-gray-400 text-sm">
-                      {item.observacion ?? '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              {totalEstimado > 0 && (
-                <tfoot>
-                  <tr className="bg-gray-50 border-t border-gray-200">
-                    <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-gray-600 text-right hidden md:table-cell">
-                      Total estimado:
-                    </td>
-                    <td colSpan={2} className="px-4 py-3">
-                      <span className="text-base font-bold text-gray-900">{formatCurrency(totalEstimado)}</span>
-                      <span className="text-xs text-gray-400 ml-2">(referencial)</span>
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
+          <ItemsPrecioTable items={items} pedidoId={params.id} userRol={profile.rol} />
         </div>
 
         {/* Acciones de gestión */}

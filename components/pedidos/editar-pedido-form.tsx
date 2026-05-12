@@ -8,7 +8,7 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import {
   Plus, Save, Send, Loader2, AlertCircle,
-  CalendarDays, Building2, HardHat, FileText,
+  CalendarDays, Building2, HardHat, FileText, Wrench, X, Check,
 } from 'lucide-react'
 import { updatePedido } from '@/app/actions/pedidos'
 import DraftItemsTable, { type DraftItem } from '@/components/pedidos/draft-items-table'
@@ -31,6 +31,8 @@ interface EditarPedidoFormProps {
   materiales:    Material[]
 }
 
+const emptyManual = { nombre: '', cantidad: '1', precio: '', unidad: 'UN', observacion: '' }
+
 export default function EditarPedidoForm({
   pedidoId,
   obra,
@@ -42,14 +44,20 @@ export default function EditarPedidoForm({
 
   const toDraft = (items: PedidoItem[]): DraftItem[] =>
     items.map(i => ({
-      _key:        i.id,
-      material:    i.material!,
-      cantidad:    Number(i.cantidad),
-      observacion: i.observacion ?? '',
+      _key:            i.id,
+      material:        i.material ?? null,
+      nombre_custom:   i.nombre_custom ?? undefined,
+      unidad_custom:   i.unidad_custom ?? undefined,
+      cantidad:        Number(i.cantidad),
+      observacion:     i.observacion ?? '',
+      precio_unitario: i.precio_unitario ?? null,
     }))
 
   const [items,      setItems]      = useState<DraftItem[]>(toDraft(existingItems))
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [showManual, setShowManual] = useState(false)
+  const [manualForm, setManualForm] = useState(emptyManual)
+  const [manualError,setManualError]= useState('')
   const [submitting, setSubmitting] = useState<'borrador' | 'pendiente' | null>(null)
   const [itemsError, setItemsError] = useState<string | null>(null)
   const estadoRef = useRef<'borrador' | 'pendiente'>('borrador')
@@ -63,22 +71,40 @@ export default function EditarPedidoForm({
     },
   })
 
-  const selectedIds = new Set(items.map(i => i.material.id))
+  const selectedIds = new Set(items.filter(i => i.material).map(i => i.material!.id))
 
   const handleAdd = useCallback((material: Material, cantidad: number, observacion: string) => {
     setItemsError(null)
     setItems(prev => {
-      const existing = prev.find(i => i.material.id === material.id)
+      const existing = prev.find(i => i.material?.id === material.id)
       if (existing) {
-        return prev.map(i =>
-          i.material.id === material.id ? { ...i, cantidad: i.cantidad + cantidad } : i
-        )
+        return prev.map(i => i.material?.id === material.id ? { ...i, cantidad: i.cantidad + cantidad } : i)
       }
-      return [...prev, { _key: `${material.id}-${Date.now()}`, material, cantidad, observacion }]
+      return [...prev, { _key: `${material.id}-${Date.now()}`, material, cantidad, observacion, precio_unitario: null }]
     })
   }, [])
 
-  const handleUpdate = useCallback((key: string, patch: Partial<Pick<DraftItem, 'cantidad' | 'observacion'>>) => {
+  const handleAddManual = useCallback(() => {
+    setManualError('')
+    if (!manualForm.nombre.trim()) { setManualError('El nombre es obligatorio.'); return }
+    const qty = parseFloat(manualForm.cantidad)
+    if (isNaN(qty) || qty <= 0) { setManualError('Ingresa una cantidad válida.'); return }
+    const precio = parseFloat(manualForm.precio)
+    setItemsError(null)
+    setItems(prev => [...prev, {
+      _key:            `custom-${Date.now()}`,
+      material:        null,
+      nombre_custom:   manualForm.nombre.trim(),
+      unidad_custom:   manualForm.unidad.trim() || 'UN',
+      cantidad:        qty,
+      observacion:     manualForm.observacion,
+      precio_unitario: !isNaN(precio) && precio > 0 ? precio : null,
+    }])
+    setManualForm(emptyManual)
+    setShowManual(false)
+  }, [manualForm])
+
+  const handleUpdate = useCallback((key: string, patch: Partial<Pick<DraftItem, 'cantidad' | 'observacion' | 'precio_unitario'>>) => {
     setItems(prev => prev.map(i => i._key === key ? { ...i, ...patch } : i))
   }, [])
 
@@ -100,9 +126,11 @@ export default function EditarPedidoForm({
       observaciones:   data.observaciones || undefined,
       estado,
       items: items.map(i => ({
-        material_id:     i.material.id,
+        material_id:     i.material?.id ?? null,
+        nombre_custom:   i.material ? undefined : i.nombre_custom,
+        unidad_custom:   i.material ? undefined : i.unidad_custom,
         cantidad:        i.cantidad,
-        precio_unitario: i.material.precio_referencia,
+        precio_unitario: i.precio_unitario,
         observacion:     i.observacion || undefined,
       })),
     })
@@ -192,16 +220,72 @@ export default function EditarPedidoForm({
               <span className="badge bg-primary-100 text-primary-700">{items.length}</span>
             )}
           </h2>
-          <button
-            type="button"
-            onClick={() => { setItemsError(null); setDrawerOpen(true) }}
-            className="btn-secondary text-sm"
-            disabled={isLoading}
-          >
-            <Plus className="w-4 h-4" />
-            Agregar material
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setShowManual(v => !v); setManualError('') }}
+              className="btn-secondary text-sm" disabled={isLoading}>
+              <Wrench className="w-4 h-4" /> Ítem manual
+            </button>
+            <button type="button" onClick={() => { setItemsError(null); setDrawerOpen(true) }}
+              className="btn-secondary text-sm" disabled={isLoading}>
+              <Plus className="w-4 h-4" /> Del catálogo
+            </button>
+          </div>
         </div>
+
+        {showManual && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-xs font-semibold text-amber-700 mb-3 flex items-center gap-1.5">
+              <Wrench className="w-3.5 h-3.5" /> Agregar ítem manual
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="label text-xs">Nombre <span className="text-red-500">*</span></label>
+                <input type="text" placeholder="Ej: Tornillo autoperforante 1/2&quot;"
+                  value={manualForm.nombre}
+                  onChange={e => setManualForm(f => ({ ...f, nombre: e.target.value }))}
+                  className="input text-sm" />
+              </div>
+              <div>
+                <label className="label text-xs">Cantidad <span className="text-red-500">*</span></label>
+                <input type="number" min="0.001" step="any"
+                  value={manualForm.cantidad}
+                  onChange={e => setManualForm(f => ({ ...f, cantidad: e.target.value }))}
+                  className="input text-sm" />
+              </div>
+              <div>
+                <label className="label text-xs">Unidad</label>
+                <input type="text" placeholder="UN"
+                  value={manualForm.unidad}
+                  onChange={e => setManualForm(f => ({ ...f, unidad: e.target.value }))}
+                  className="input text-sm" />
+              </div>
+              <div>
+                <label className="label text-xs">Precio unitario (opcional)</label>
+                <input type="number" min="0" step="any" placeholder="0"
+                  value={manualForm.precio}
+                  onChange={e => setManualForm(f => ({ ...f, precio: e.target.value }))}
+                  className="input text-sm" />
+              </div>
+              <div>
+                <label className="label text-xs">Observación</label>
+                <input type="text" placeholder="Opcional..."
+                  value={manualForm.observacion}
+                  onChange={e => setManualForm(f => ({ ...f, observacion: e.target.value }))}
+                  className="input text-sm" />
+              </div>
+            </div>
+            {manualError && <p className="text-xs text-red-600 mt-2">{manualError}</p>}
+            <div className="flex gap-2 mt-3">
+              <button type="button" onClick={handleAddManual} className="btn-primary text-sm">
+                <Check className="w-4 h-4" /> Agregar
+              </button>
+              <button type="button" onClick={() => { setShowManual(false); setManualError('') }}
+                className="btn-secondary text-sm">
+                <X className="w-4 h-4" /> Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         {itemsError && (
           <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 mb-4">

@@ -64,10 +64,12 @@ export interface Pedido {
 export interface PedidoItem {
   id: string
   pedido_id: string
-  material_id: string
+  material_id: string | null
   cantidad: number
   precio_unitario: number | null
   observacion: string | null
+  nombre_custom: string | null
+  unidad_custom: string | null
   created_at: string
   material?: Material
 }
